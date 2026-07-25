@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JS-Snake</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container" x-data="jsSnake">
+      <section class="grid">
+        <article>
+          <header>
+            <h1>JS-Snake</h1>
+            <p>Pure frontend JavaScript snake game.</p>
+          </header>
+
+          <div class="grid">
+            <button type="button" class="outline" @click="restart()">Restart</button>
+            <button type="button" @click="togglePause()" x-text="paused ? 'Resume' : 'Pause'">Pause</button>
+          </div>
+
+          <div class="board-panel">
+            <div class="score-pill">
+              <strong>Score</strong>
+              <span x-text="score">0</span>
+            </div>
+            <div class="canvas-wrapper">
+              <canvas id="gameCanvas" width="480" height="480"></canvas>
+              <div class="overlay" x-show="paused" x-cloak>
+                <span class="overlay-text">Paused</span>
+                <small>Press Space to resume</small>
+              </div>
+              <div class="overlay overlay--gameover" :class="{ 'overlay--visible': !running }">
+                <span class="overlay-text">Game Over</span>
+                <small>Press R to restart</small>
+              </div>
+            </div>
+          </div>
+
+          <footer>
+            <small>Use the arrow keys or WASD to move. Press Space to pause and R to restart.</small>
+          </footer>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>
