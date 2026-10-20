@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+
+  <metadata xmlns:fc="https://danielmroczek.github.io/favicon-creator">
+    <fc:iconFamily>tabler</fc:iconFamily>
+    <fc:iconName>apple</fc:iconName>
+    <fc:gradientStart>#00bcd4</fc:gradientStart>
+    <fc:gradientEnd>#00838f</fc:gradientEnd>
+    <fc:iconColor>#ffffff</fc:iconColor>
+    <fc:borderRadius>12</fc:borderRadius>
+    <fc:iconY>-1</fc:iconY>
+    <fc:iconSize>21</fc:iconSize>
+  </metadata>
+
+  <defs>
+    <linearGradient id="gradient" x1="15%" y1="15%" x2="85%" y2="85%">
+      <stop stop-color="#00bcd4"/>
+      <stop offset="1" stop-color="#00838f"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="32" height="32" rx="12" fill="url(#gradient)"/>
+
+  <path id="icon" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6.6666 14.2055c0 3.619 0.518 6.2055 2.5924 9.3078 1.5762 2.0965 3.682 2.6215 5.9267 1.1526 0.497-0.3127 1.1317-0.3127 1.6298 0 2.2435 1.47 4.3494 0.9438 5.9255-1.1526C24.8154 20.4099 25.3334 17.8246 25.3334 14.2067 25.3334 11.1022 23.0117 8 20.1487 8c-1.4782 0-2.8117 0.8085-3.7567 1.68a0.5833 0.5833 0 0 1-0.784 0C14.6642 8.8097 13.3295 8 11.8513 8 8.9883 8 6.6666 11.1034 6.6666 14.2055M10.1666 15c0-1.715 0.5297-2.73 1.75-3.5M16 9.1667c0-1.4 1.0115-4.6667 3.5-4.6667"/>
+
+</svg>
