@@ -68,10 +68,13 @@ export class Snake {
    *  @param {{ x: number, y: number }} nextHead — the new head position */
   move(ateFood, nextHead) {
     this.segments.unshift(nextHead);
-    if (ateFood || this.#growthRemaining > 0) {
-      if (this.#growthRemaining > 0) {
-        this.#growthRemaining--;
-      }
+    if (ateFood) {
+      // Eating adds one segment of growth on top of any pending initial growth.
+      this.#growthRemaining += 1;
+      return;
+    }
+    if (this.#growthRemaining > 0) {
+      this.#growthRemaining -= 1;
     } else {
       this.segments.pop();
     }
