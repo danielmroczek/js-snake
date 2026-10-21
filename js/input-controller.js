@@ -1,5 +1,5 @@
 /** Keyboard input controller that maps key presses to game actions.
- *  Arrow keys / WASD → direction, Space → pause, R → restart. */
+ *  Arrow keys / WASD → direction (starts an idle game), Space → pause, R → restart. */
 export class InputController {
   /** Create a new input controller bound to the given game.
    *  @param {import('./game.js').Game} game — the game instance to control */

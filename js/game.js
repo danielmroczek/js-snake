@@ -7,19 +7,28 @@ export class Game {
   #running;
   #paused;
   #dying;
+  #started;
   #deathTick;
   #score;
+  #best;
   #tickMs;
+  #newBest = false;
   #lastTimestamp = null;
 
   /** Create a new game on a 20×20 board with a 120 ms tick interval. */
   constructor() {
     this.#board = new Board(20, 20);
     this.#tickMs = 120;
+    try {
+      this.#best = Number(localStorage.getItem('js-snake-best')) || 0;
+    } catch {
+      this.#best = 0;
+    }
     this.reset();
   }
 
-  /** Reset the game to its initial state: new snake, cleared board, score 0. */
+  /** Reset the game to its initial state: new snake, cleared board, score 0.
+   *  The game enters the idle (not started) state until start() is called. */
   reset() {
     this.#snake = new Snake(10, 10);
     this.#board.reset();
@@ -28,7 +37,15 @@ export class Game {
     this.#running = true;
     this.#paused = false;
     this.#dying = false;
+    this.#started = false;
     this.#deathTick = 0;
+    this.#newBest = false;
+    this.#lastTimestamp = null;
+  }
+
+  /** Leave the idle state and begin play. No-op when already started. */
+  start() {
+    this.#started = true;
     this.#lastTimestamp = null;
   }
 
@@ -39,12 +56,29 @@ export class Game {
       return;
     }
 
+    if (!this.#started) {
+      this.start();
+    }
+
     this.#snake.setDirection(direction);
   }
 
-  /** Toggle the paused state. Ignored when the game is over or dying. */
+  /** Toggle the paused state. Ignored while dying or not yet started.
+   *  On a finished round (Space after game over) this restarts straight into play — no idle screen. */
   togglePause() {
-    if (!this.#running || this.#dying) {
+    if (this.#dying) {
+      return;
+    }
+
+    if (!this.#running) {
+      this.reset();
+      this.start();
+      return;
+    }
+
+    if (!this.#started) {
+      // Space on the idle screen starts the game immediately.
+      this.start();
       return;
     }
 
@@ -59,6 +93,18 @@ export class Game {
       return;
     }
 
+    if (!this.#started) {
+      // Idle: clock primed, but no stepping until the player starts.
+      this.#lastTimestamp = timestamp;
+      return;
+    }
+
+    if (!this.#running) {
+      // Round is over: freeze the world — only the clock stays primed.
+      this.#lastTimestamp = timestamp;
+      return;
+    }
+
     const elapsed = timestamp - this.#lastTimestamp;
     if (elapsed >= this.#tickMs) {
       if (this.#dying) {
@@ -67,10 +113,11 @@ export class Game {
         if (this.#deathTick >= this.#snake.segments.length + 2) {
           this.#dying = false;
           this.#running = false;
+          this.#commitBest();
         }
         this.#lastTimestamp = timestamp;
       } else if (!this.#paused) {
-        this.step();
+        this.#tick();
         this.#lastTimestamp = timestamp;
       }
     }
@@ -85,20 +132,55 @@ export class Game {
       food: this.#board.food ? { ...this.#board.food } : null,
       segments: this.#snake.segments.map((s) => ({ ...s })),
       running: this.#running,
+      started: this.#started,
       paused: this.#paused,
       dying: this.#dying,
       deathTick: this.#deathTick,
       score: this.#score,
+      best: this.#best,
+      newBest: this.#newBest,
     };
   }
 
+  /** Persist a new best score after a finished round.
+   *  @returns {boolean} true when the round set a new best. */
+  #commitBest() {
+    if (this.#score > this.#best) {
+      this.#best = this.#score;
+      try {
+        localStorage.setItem('js-snake-best', String(this.#best));
+      } catch {
+        /* storage unavailable — keep the in-memory best */
+      }
+      this.#newBest = true;
+      return true;
+    }
+    return false;
+  }
+
+  /** Whether the most recently finished round set a new best. */
+  get newBest() {
+    return this.#newBest;
+  }
+
   /** Advance the game by one tick: move the snake, check collisions, handle food.
-   *  No-op when the game is over, paused, or dying. */
+   *  No-op when the game is over, paused, or dying. Direct calls (tests,
+   *  keyboard-driven play) leave the idle state; the rAF clock (update) does not. */
   step() {
     if (!this.#running || this.#paused || this.#dying) {
       return;
     }
 
+    if (!this.#started) {
+      this.start();
+    }
+
+    this.#tick();
+  }
+
+  /** Move the snake one cell — the shared body used by both step() and #tick().
+   *  Assumes all guards (running, paused, dying, idle) have already been applied. */
+  #tick() {
     this.#snake.advanceDirection();
     const raw = this.#snake.peekNextPosition();
     const nextHead = this.#board.wrapPosition(raw.x, raw.y);
