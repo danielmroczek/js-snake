@@ -4,6 +4,17 @@ import { Game } from '../js/game.js';
 import { Snake } from '../js/snake.js';
 import { Board } from '../js/board.js';
 
+// Node runs with `--localstorage-file` unset in some environments; provide a
+// minimal in-memory stand-in so persistence tests are deterministic everywhere.
+if (typeof globalThis.localStorage === 'undefined') {
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => store.get(key) ?? null,
+    setItem: (key, value) => store.set(key, String(value)),
+    clear: () => store.clear(),
+  };
+}
+
 // ── Test helpers ───────────────────────────────────────────────────────────
 
 /** Drive the game through its public interface to walk the snake in a direction. */
@@ -173,6 +184,126 @@ test('game stops when snake hits itself', () => {
   assert.equal(game.getSnapshot().running, false);
 });
 
+test('togglePause on a finished game restarts it', () => {
+  const game = new Game();
+
+  // Force a collision: repeated zigzag rounds until the grown snake crosses itself.
+  let steps = 0;
+  while (game.getSnapshot().running && !game.getSnapshot().dying && steps < 6000) {
+    for (let row = 0; row < 20 && game.getSnapshot().running && !game.getSnapshot().dying; row++) {
+      const dir = row % 2 === 0 ? 'right' : 'left';
+      for (let s = 0; s < 20 && game.getSnapshot().running && !game.getSnapshot().dying; s++) {
+        game.handleDirection(dir);
+        game.step();
+        steps++;
+      }
+      game.handleDirection('down');
+      game.step();
+      steps++;
+    }
+  }
+  finishDeath(game);  assert.equal(game.getSnapshot().running, false);
+
+  // Space after game over restarts straight into play — no idle screen.
+  game.togglePause();
+  const snap = game.getSnapshot();
+  assert.equal(snap.running, true);
+  assert.equal(snap.started, true);
+  assert.equal(snap.score, 0);
+});
+
+// ── Best score persistence ────────────────────────────────────────────────
+
+/** Steer the snake toward its food and step until it eats. */
+function eatOnce(game, maxMoves = 100) {
+  let moves = 0;
+  while (game.getSnapshot().score === 0 && game.getSnapshot().running && moves < maxMoves) {
+    const snap = game.getSnapshot();
+    const food = snap.food;
+    const head = snap.segments[0];
+    let dir;
+    if (head.y !== food.y) {
+      dir = head.y < food.y ? 'down' : 'up';
+    } else {
+      dir = head.x < food.x ? 'right' : 'left';
+    }
+    game.handleDirection(dir);
+    game.step();
+    moves++;
+  }
+  return game.getSnapshot().score > 0;
+}
+
+/** Force a quick death: trace a 2×2 square so the head crosses the body.
+ *  Directions are issued one per cycle and consumed one step at a time (FIFO queue). */
+function killSnake(game) {
+  let cycles = 0;
+  while (game.getSnapshot().running && cycles < 20) {
+    for (const dir of ['down', 'left', 'up', 'right']) {
+      if (!game.getSnapshot().running) return;
+      game.handleDirection(dir);
+      game.step();
+    }
+    cycles++;
+  }
+}
+
+/** Run out the death animation through update() until the round ends. */
+function finishDeath(game) {
+  let t = 0;
+  while (game.getSnapshot().running && t < 100) {
+    game.update(t * 120);
+    t++;
+  }
+}
+
+test('finishing a round with a record persists best and raises newBest', () => {
+  // Isolate the store: each test gets a deterministic best baseline.
+  localStorage.clear();
+  const game = new Game();
+  assert.equal(game.getSnapshot().best, 0);
+
+  assert.ok(eatOnce(game), 'snake should have scored before dying');
+
+  killSnake(game);
+  finishDeath(game);
+
+  const finished = game.getSnapshot();
+  assert.equal(finished.running, false);
+  assert.equal(finished.newBest, true);
+  assert.equal(Number(localStorage.getItem('js-snake-best')), finished.score);
+
+  // A fresh Game instance restores the persisted best.
+  const next = new Game();
+  assert.equal(next.getSnapshot().best, finished.score);
+});
+
+test('dying grays out over ticks, then the game ends', () => {
+  const game = new Game();
+
+  killSnake(game);
+  assert.equal(game.getSnapshot().dying, true);
+
+  // Each update() tick advances the death animation...
+  game.update(0);
+  game.update(120);
+  const tick1 = game.getSnapshot();
+  game.update(240);
+  const tick2 = game.getSnapshot();
+  assert.ok(tick2.deathTick >= tick1.deathTick + 1, 'deathTick advances per tick');
+
+  // ...until the round is over.
+  let t = 0;
+  while (game.getSnapshot().running && t < 100) {
+    game.update(t * 120);
+    t++;
+  }
+  const end = game.getSnapshot();
+  assert.equal(end.dying, false);
+  assert.equal(end.running, false);
+  assert.equal(end.newBest, false);
+});
+
 // ── Game.handleDirection() ────────────────────────────────────────────────
 
 test('queued directions are applied one step at a time', () => {
@@ -216,8 +347,13 @@ test('queued directions are preserved FIFO and consumed one at a time', () => {
 
 // ── Game.togglePause() ────────────────────────────────────────────────────
 
-test('togglePause pauses and unpauses the game', () => {
+test('togglePause starts an idle game, then pauses and unpauses it', () => {
   const game = new Game();
+  // First Space on the idle screen starts play immediately.
+  game.togglePause();
+  assert.equal(game.getSnapshot().started, true);
+  assert.equal(game.getSnapshot().paused, false);
+
   game.togglePause();
   assert.equal(game.getSnapshot().paused, true);
 
@@ -227,7 +363,8 @@ test('togglePause pauses and unpauses the game', () => {
 
 test('step does nothing when paused', () => {
   const game = new Game();
-  game.togglePause();
+  game.togglePause(); // start
+  game.togglePause(); // pause
   const before = game.getSnapshot().segments[0];
   game.step();
   const after = game.getSnapshot().segments[0];
@@ -251,6 +388,7 @@ test('reset restores initial state', () => {
 
 test('game.update steps when enough time has elapsed', () => {
   const game = new Game();
+  game.start(); // leaving idle is part of the new contract
   const before = game.getSnapshot().segments[0].x;
   game.update(0);
   game.update(120); // elapsed = 120ms = tickMs → should step
