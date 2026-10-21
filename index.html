@@ -10,41 +10,66 @@
   </head>
   <body>
     <main class="container" x-data="jsSnake">
-      <section class="grid">
-        <article>
-          <header>
-            <h1>JS-Snake</h1>
-            <p>Pure frontend JavaScript snake game.</p>
-          </header>
+      <div class="board-shell">
+        <aside class="stat-rail">
+          <h1 class="brand">JS<span class="brand-accent">-Snake</span></h1>
 
-          <div class="grid">
-            <button type="button" class="outline" @click="restart()">Restart</button>
-            <button type="button" @click="togglePause()" x-text="paused ? 'Resume' : 'Pause'">Pause</button>
+          <div class="stat-card">
+            <small class="stat-label">Score</small>
+            <strong class="stat-value" x-text="score">0</strong>
           </div>
 
-          <div class="board-panel">
-            <div class="score-pill">
-              <strong>Score</strong>
-              <span x-text="score">0</span>
+          <div class="stat-card" :class="{ 'stat-card--best': newBest }">
+            <small class="stat-label">Best</small>
+            <strong class="stat-value" x-text="best">0</strong>
+          </div>
+
+          <div class="stat-card">
+            <small class="stat-label">Length</small>
+            <strong class="stat-value" x-text="length">3</strong>
+          </div>
+
+          <div class="stat-card stat-card--legend">
+            <small class="stat-label">Controls</small>
+            <div class="legend-row"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd><span>steer</span></div>
+            <div class="legend-row"><kbd>Space</kbd><span>start / pause</span> <kbd>R</kbd><span>restart</span></div>
+          </div>
+        </aside>
+
+        <section class="play-column">
+          <div class="play-toolbar">
+            <button type="button" class="btn-play" @click="start()" :class="{ hidden: started }">Play</button>
+            <button type="button" class="btn-pause" @click="togglePause()" :class="{ hidden: !started || !running }"
+              x-text="paused ? 'Resume' : 'Pause'">Pause</button>
+            <button type="button" class="btn-restart" @click="restart()">Restart</button>
+            <span class="status-chip" :class="statusClass" x-text="statusText">Idle</span>
+          </div>
+
+          <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="480" height="480"></canvas>
+
+            <div class="overlay overlay--start" :class="{ 'overlay--visible': !started }">
+              <span class="overlay-text">Ready to slither?</span>
+              <small>Arrows / WASD or Space to start · Space pauses · R restarts</small>
+              <button type="button" class="btn-play overlay-cta" @click="start()">Press to play</button>
+              <small class="overlay-alt">or hit any arrow key</small>
             </div>
-            <div class="canvas-wrapper">
-              <canvas id="gameCanvas" width="480" height="480"></canvas>
-              <div class="overlay" x-show="paused" x-cloak>
-                <span class="overlay-text">Paused</span>
-                <small>Press Space to resume</small>
-              </div>
-              <div class="overlay overlay--gameover" :class="{ 'overlay--visible': !running }">
-                <span class="overlay-text">Game Over</span>
-                <small>Press R to restart</small>
-              </div>
+
+            <div class="overlay" x-show="paused" x-cloak>
+              <span class="overlay-text">Paused</span>
+              <small>Press Space to resume</small>
+            </div>
+
+            <div class="overlay overlay--gameover" :class="{ 'overlay--visible': !running && started }">
+              <span class="overlay-text">Game Over</span>
+              <small class="overlay-score" x-text="'Score ' + score + ' · Best ' + best">Score 0 · Best 0</small>
+              <small class="overlay-alt">Press Space or R to play again</small>
             </div>
           </div>
 
-          <footer>
-            <small>Use the arrow keys or WASD to move. Press Space to pause and R to restart.</small>
-          </footer>
-        </article>
-      </section>
+          <p class="board-hint">Wrap-around board — edges teleport instead of killing you.</p>
+        </section>
+      </div>
     </main>
 
     <script type="module" src="./js/main.js"></script>

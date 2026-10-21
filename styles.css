@@ -15,7 +15,20 @@
   /* Overlay theme */
   --overlay-bg: rgba(2, 6, 23, 0.8);
   --overlay-text-color: #e2e8f0;
-  --overlay-hint-color: #94a3b8;
+  --overlay-hint-color: #a8b6cc;
+
+  /* Shell theme */
+  --shell-bg: #0b1120;
+  --card-bg: #020617;
+  --hairline: #1e293b;
+  --text-color: #e2e8f0;
+  --label-color: #94a3b8;
+  --hint-color: #7d8ba1;
+  --green: #22c55e;
+  --green-deep: #04210f;
+  --red: #ef4444;
+  --step: steps(2, end);
+  --step-duration: 90ms;
 }
 
 /* Hide elements until Alpine initializes */
@@ -25,46 +38,206 @@
 
 body {
   min-height: 100vh;
-  padding: 2rem 0;
+  margin: 0;
+  background: var(--shell-bg);
+  color: var(--text-color);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+::selection {
+  background: rgba(34, 197, 94, 0.35);
+  color: #f0fdf4;
 }
 
 .container {
-  max-width: 720px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
 }
 
-article {
-  padding: 1.5rem;
+.board-shell {
+  display: flex;
+  gap: 28px;
+  align-items: stretch;
 }
 
-.board-panel {
-  margin-top: 1.25rem;
+/* ---- Stat rail ---- */
+.stat-rail {
+  flex: 0 0 240px;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 16px;
 }
 
-.score-pill {
-  display: inline-flex;
+.brand {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--snake-head-color);
+  margin: 0 0 4px;
+}
+
+.brand-accent {
+  color: var(--green);
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: border-color var(--step-duration) var(--step);
+}
+
+.stat-card--best {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.stat-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--label-color);
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 34px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.stat-card--best .stat-value {
+  color: var(--green);
+}
+
+.stat-card--legend {
+  font-size: 12px;
+  color: var(--label-color);
+}
+
+.legend-row {
+  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: fit-content;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--muted-border-color);
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.legend-row span {
+  margin-left: 4px;
+}
+
+kbd {
+  background: var(--hairline);
+  border-radius: 5px;
+  padding: 1px 7px;
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  color: var(--text-color);
+}
+
+/* ---- Play column ---- */
+.play-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.play-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.play-toolbar button {
+  background: var(--card-bg);
+  border: 1px solid var(--hairline);
+  color: var(--text-color);
+  border-radius: 10px;
+  padding: 9px 22px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color var(--step-duration) var(--step);
+}
+
+.play-toolbar button:hover {
+  border-color: var(--snake-head-color);
+}
+
+.play-toolbar button.hidden {
+  display: none;
+}
+
+.btn-play,
+.overlay-cta {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--green-deep);
+  font-weight: 700;
+}
+
+.overlay-cta {
+  margin-top: 0.75rem;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 38px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.status-chip {
+  margin-left: auto;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   border-radius: 999px;
+  padding: 6px 14px;
+  border: 1px solid var(--hairline);
+  color: var(--label-color);
+  transition: color var(--step-duration) var(--step), border-color var(--step-duration) var(--step);
+}
+
+.status-chip--running {
+  color: var(--green);
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.status-chip--paused {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.status-chip--over {
+  color: var(--red);
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ---- Board ---- */
+.canvas-wrapper {
+  position: relative;
+  max-width: 640px;
 }
 
 canvas {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 1rem;
-  border: 1px solid var(--muted-border-color);
+  border-radius: 16px;
+  border: 1px solid var(--hairline);
   background: var(--canvas-bg);
-}
-
-.canvas-wrapper {
-  position: relative;
+  touch-action: none;
 }
 
 .overlay {
@@ -75,17 +248,17 @@ canvas {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 1rem;
+  border-radius: 16px;
   background: var(--overlay-bg);
-  backdrop-filter: blur(0px);
   z-index: 1;
   opacity: 0;
-  transition: opacity 0.6s ease-in, backdrop-filter 0.8s ease-in;
+  transition: opacity var(--step-duration) var(--step);
+  pointer-events: none;
 }
 
 .overlay--visible {
   opacity: 1;
-  backdrop-filter: blur(6px);
+  pointer-events: auto;
 }
 
 .overlay-text {
@@ -94,13 +267,66 @@ canvas {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--overlay-text-color);
+  text-align: center;
 }
 
 .overlay small {
   color: var(--overlay-hint-color);
+  text-align: center;
 }
 
-footer {
-  margin-top: 1rem;
-  color: var(--muted-color);
+.overlay-score {
+  font-variant-numeric: tabular-nums;
+}
+
+.overlay-alt {
+  font-size: 12px;
+  color: var(--hint-color);
+}
+
+.board-hint {
+  font-size: 12px;
+  color: var(--hint-color);
+  margin: 0;
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 720px) {
+  .board-shell {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .stat-rail {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex: none;
+    gap: 10px;
+  }
+
+  .brand {
+    width: 100%;
+    margin: 0;
+  }
+
+  .stat-card {
+    flex: 1 1 30%;
+    padding: 10px 12px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .stat-card--legend {
+    display: none;
+  }
+
+  .play-toolbar button {
+    padding: 8px 16px;
+  }
+
+  .container {
+    padding: 1rem;
+  }
 }
